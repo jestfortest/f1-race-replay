@@ -322,22 +322,29 @@ class LeaderboardComponent(BaseComponent):
             arcade.Text(text, left_x, top_y, text_color, 16, anchor_x="left", anchor_y="top").draw()
 
              # Tyre Icons
-            tyre_texture = self._tyre_textures.get(str(pos.get("tyre", "?")).upper())
+            tyre_val = pos.get("tyre", "?")
+            tyre_texture = self._tyre_textures.get(str(tyre_val).upper())
             if tyre_texture:
                 # position tyre icon inside the leaderboard area so it doesn't collide with track
                 tyre_icon_x = left_x + self.width - 10
                 tyre_icon_y = top_y - 12
                 icon_size = 16
                 rect = arcade.XYWH(tyre_icon_x, tyre_icon_y, icon_size, icon_size)
-                arcade.draw_texture_rect(rect=rect, texture=tyre_texture, angle=0, alpha=255)
 
-                # Draw the textured rect
-                arcade.draw_texture_rect(
-                    rect=rect,
-                    texture=tyre_texture,
-                    angle=0,
-                    alpha=255
-                )
+                # Tyre health ratio
+                current_life = pos.get("tyre_life", 0)
+                max_life = getattr(window, "max_tyre_life", {}).get(int(tyre_val), 30)
+                tyre_health_ratio = max(0.0, min(1.0, 1.0 - (current_life / max_life)))
+
+                # Background: Darkened icon
+                arcade.draw_texture_rect(rect=rect, texture=tyre_texture, alpha=80)
+
+                # Foreground: Clipped icon according to tyre health ratio
+                bright_height = icon_size * tyre_health_ratio
+                if bright_height > 0:
+                    window.ctx.scissor = (int(tyre_icon_x - 8), int(tyre_icon_y - 8), 16, int(bright_height))
+                    arcade.draw_texture_rect(rect=rect, texture=tyre_texture, alpha=255)
+                    window.ctx.scissor = None
 
                 # DRS Indicator
                 drs_val = pos.get("drs", 0)
